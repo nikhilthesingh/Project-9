@@ -1,0 +1,64 @@
+name: DevSecOps AI Security Pipeline
+
+on:
+  push:
+    branches: [ main, master ]
+  pull_request:
+    branches: [ main, master ]
+
+jobs:
+  gate1-bandit-sast:
+    name: "Gate 1: Bandit SAST Scan"
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout Repository
+        uses: actions/checkout@v4
+      - name: Set up Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: "3.11"
+      - name: Install and Run Bandit SAST
+        run: |
+          pip install bandit
+          bandit -r app.py -ll -ii
+
+  gate2-safety-dependencies:
+    name: "Gate 2: Safety Dependency Scan"
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout Repository
+        uses: actions/checkout@v4
+      - name: Set up Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: "3.11"
+      - name: Install and Run Safety CVE Check
+        run: |
+          pip install "safety==2.3.5" "marshmallow<4.0.0" "packaging<22.0" "pydantic<2.0.0"
+          safety check -r requirements.txt
+
+  gate3-gitleaks-secrets:
+    name: "Gate 3: Gitleaks Secret Detection"
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout Repository
+        uses: actions/checkout@v4
+      - name: Run Gitleaks Secret Scanner
+        run: |
+          wget -q -O /tmp/gitleaks.tar.gz https://github.com/gitleaks/gitleaks/releases/download/v8.18.4/gitleaks_8.18.4_linux_x64.tar.gz
+          tar -xzf /tmp/gitleaks.tar.gz -C /tmp
+          /tmp/gitleaks detect --source app.py --no-git -v
+
+  gate4-prompt-injection-scanner:
+    name: "Gate 4: Custom Prompt Injection Scanner"
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout Repository
+        uses: actions/checkout@v4
+      - name: Set up Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: "3.11"
+      - name: Run Custom Injection & System Prompt Scanner
+        run: |
+          python3 inject_scanner.py
