@@ -137,7 +137,7 @@ def ask():
         return jsonify({"error": output_reason}), 400
     # ─────────────────────────────────────────────────────────────────
 
-    return jsonify({"response": reply})
+    return jsonify({"response": reply}) 
 
 
 if __name__ == '__main__':
